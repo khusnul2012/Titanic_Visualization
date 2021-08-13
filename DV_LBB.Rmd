@@ -1,0 +1,125 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyr)
+library(ggplot2)
+library(ggthemes)
+library(glue)
+library(plotly)
+library(scales)
+```
+
+
+```{r}
+
+#Preparing Data Titanic
+titanic_ds <- read.csv("train.csv")
+str(titanic_ds)
+View(titanic_ds)
+
+```
+
+
+###PIE CHART SEX PROPORTION###
+Simpulan: Jumlah seluruh penumpang kapal Titanic adalah 891 penumpang. Penumpang tersebut didominasi oleh Pria 65% dan sisanya wanita 65%
+
+```{r}
+nrow(titanic_ds)
+sex <- table(titanic_ds$Sex)
+sex_df <- as.data.frame(sex)
+names(sex_df)[1] <- "Sex"
+sex_df$prop <- (round(sex_df$Freq/sum(sex_df$Freq)*100))
+
+sex_pie <-
+  ggplot(sex_df, aes(x = 2, y = prop, fill = Sex)) +
+            geom_col(color = "black") +
+            geom_text(aes(label = paste0(round(prop, 2),"%")),
+                      position = position_stack(vjust = 0.5), size=5) +
+            coord_polar(theta = "y") +
+            scale_fill_manual(values = c("maroon", "skyblue"))+
+            xlim(c(0.2, 2 + 0.5)) + 
+  labs(title = "                Titanic Passanger by Sex")+
+            theme(panel.background = element_rect(fill = "white"),
+                  panel.grid = element_blank(),
+                  axis.title = element_blank(),
+                  axis.ticks = element_blank(),
+                  axis.text = element_blank(),
+            )
+sex_pie
+```
+
+
+
+```{r}
+titanic_ds$Survived <- sapply(as.character(titanic_ds$Survived), switch, 
+                           "1" = "Survived",
+                           "0" = "Dead")
+```
+
+
+###---Titanic Survival by Category of Sex--###
+Simpulan: melalui barplot di bawah ini dapat disimpulkan bahwa banyak korban meninggal merupakan berjenis kelamin laki-laki. Sebanyak 468 laki-laki dan 81 perempuan meninggal.
+```{r}
+survived_table <- table(titanic_ds$Sex, titanic_ds$Survived) 
+names(dimnames(survived_table)) <- c("Gender", "Survived")
+
+m <- as.data.frame(survived_table)
+ggplot(data = m, mapping = aes(x = Survived, y = Freq, fill=Gender)) + 
+  geom_col(width = 0.8, position = "dodge")+
+  geom_text(
+    aes(label = Freq, y = Freq + 2),
+    position = position_dodge(0.8),
+    vjust = 0
+  )+
+  labs(x = "status",
+       y = "Passanger Count",
+       fill = "Sex",
+       title = "                     Titanic Survival by Category of Sex",
+       subtitle = "") +
+  scale_fill_manual(values = c("maroon", "skyblue")) +
+  theme(
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "light blue"))
+```
+
+###---Titanic Survival by Category Pclass--###
+Simpulan: Mellaui tabel di bawah dapat disimpulan bahwa penumpang pada kelas 1 lebih banyak yang selamat dibandingkan penumpang kelas 2 dan 3. Kelas 3 menelan banyak sekali korban hal tersebut dapat disebabkan karena penumpang kelas 3 "overloa" dan persediaan life vest-sekoci sangat minim. 
+```{r}
+pclass_surv <- 
+  ggplot(titanic_ds, aes(x= Survived, fill = Sex)) + 
+  facet_wrap(~Pclass) +
+  geom_bar()+
+  labs(x = "status",
+       y = "Passanger Count",
+       fill = "Status",
+       title = "                   Titanic Survival by Category of Pclass",
+       subtitle = "") +
+  scale_fill_manual(values = c("maroon", "skyblue")) +
+  theme(
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "light blue"))
+ggplotly(pclass_surv)
+
+```
+
+
+###Survival by Category of Age and Sex###
+Simpulan: Penumpang yang meninggal/tidak selamat baik laki-laki maupun perempuan cenderung berada di usia remaja dan dewasa. Hal tesebut terlihat pada persebaran umur penumpang meninggal yang cenderung menjulur ke kanan, yang berarti nilai mean lebih besar dibandingan median serta modus. Sedangkan umur penumpang yang selamat cukup beragam.
+```{r}
+age_surv <-
+  ggplot(titanic_ds, aes(x = Age, fill = Sex)) + 
+  geom_histogram() +
+  facet_wrap(~Survived)+ 
+  labs(x = "Status", 
+       y = "Age", 
+       title = "Survival by Category of Age and Sex")+
+  scale_fill_manual(values = c("maroon", "skyblue")) +
+  theme(
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "light blue"))
+ggplotly(age_surv)
+```
+
